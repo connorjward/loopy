@@ -1909,11 +1909,12 @@ def realize_reduction_for_single_kernel(kernel, callables_table,
 
     # }}}
 
+    from loopy.kernel import make_loop_kernel_domains
     cb_mapper = RealizeReductionCallbackMapper(map_reduction, callables_table)
 
     insn_queue = kernel.instructions[:]
     insn_id_replacements = {}
-    domains = kernel.domains[:]
+    domains = kernel.domains.thaw()
 
     temp_kernel = kernel
     changed = False
@@ -2007,7 +2008,7 @@ def realize_reduction_for_single_kernel(kernel, callables_table,
             temp_kernel = kernel.copy(
                     instructions=new_insns + insn_queue,
                     temporary_variables=new_temporary_variables,
-                    domains=domains)
+                    domains=make_loop_kernel_domains(domains))
             temp_kernel = lp.replace_instruction_ids(
                     temp_kernel, insn_id_replacements)
             changed = True
@@ -2021,7 +2022,7 @@ def realize_reduction_for_single_kernel(kernel, callables_table,
         kernel = kernel.copy(
             instructions=new_insns,
             temporary_variables=new_temporary_variables,
-            domains=domains)
+            domains=make_loop_kernel_domains(domains))
 
     kernel = lp.replace_instruction_ids(kernel, insn_id_replacements)
 
