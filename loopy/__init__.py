@@ -156,6 +156,9 @@ from loopy.target.numba import NumbaTarget, NumbaCudaTarget
 
 from loopy.tools import Optional, t_unit_to_python
 
+from loopy.transform.loop_fusion import (get_kennedy_unweighted_fusion_candidates,
+                                         rename_inames_in_batch)
+
 
 __all__ = [
         "TaggedVariable", "Reduction", "LinearSubscript", "TypeCast",
@@ -247,6 +250,9 @@ __all__ = [
         "inline_callable_kernel", "rename_callable",
 
         "pack_and_unpack_args_for_call",
+
+        "rename_inames_in_batch",
+        "get_kennedy_unweighted_fusion_candidates",
 
         # }}}
 
