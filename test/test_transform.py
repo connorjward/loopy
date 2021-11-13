@@ -1324,6 +1324,20 @@ def test_precompute_does_not_lead_to_dep_cycle(ctx_factory):
     lp.auto_test_vs_ref(knl, ctx, ref_knl)
 
 
+def test_rename_inames(ctx_factory):
+    ctx = ctx_factory()
+
+    knl = lp.make_kernel(
+        "{[i1, i2]: 0<=i1, i2<10}",
+        """
+        y1[i1] = 2
+        y2[i2] = 3
+        """)
+    ref_knl = knl
+    knl = lp.rename_inames(knl, ["i1", "i2"], "ifused")
+    lp.auto_test_vs_ref(knl, ctx, ref_knl)
+
+
 if __name__ == "__main__":
     if len(sys.argv) > 1:
         exec(sys.argv[1])
