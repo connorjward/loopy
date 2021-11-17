@@ -21,6 +21,7 @@ THE SOFTWARE.
 """
 
 import pytest
+import loopy as lp
 
 import sys
 
@@ -277,6 +278,33 @@ def test_Optional():  # noqa
     kb(Optional(None))
 
     # }}}
+
+
+@lp.memoize_on_disk
+def very_costly_transform(knl, iname):
+    from time import sleep
+    sleep(10)
+    return lp.split_iname(knl, iname, 4)
+
+
+def test_memoize_on_disk():
+    if not lp.CACHING_ENABLED:
+        # if caching is disabled => don't test the caching behavior
+        pytest.skip("cannot test memoization if caching disabled")
+
+    knl = lp.make_kernel("{[i]: 0<=i<10}",
+                         """
+                         y[i] = i
+                         """)
+
+    from time import time
+    uncached_knl = very_costly_transform(knl, "i")
+
+    start = time()
+    cached_knl = very_costly_transform(knl, "i")
+    end = time()
+    assert (end - start) < 7
+    assert cached_knl == uncached_knl
 
 
 if __name__ == "__main__":
