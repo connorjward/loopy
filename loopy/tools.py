@@ -31,6 +31,9 @@ from pymbolic.mapper.persistent_hash import (
         PersistentHashWalkMapper as PersistentHashWalkMapperBase)
 from sys import intern
 
+import logging
+logger = logging.getLogger(__name__)
+
 
 def is_integer(obj):
     return isinstance(obj, (int, np.integer))
@@ -861,5 +864,39 @@ def t_unit_to_python(t_unit, var_name="t_unit",
         return preamble_str, body_str
     else:
         return python_code
+
+
+def memoize_on_disk(transformation_func, key_builder_t=LoopyKeyBuilder):
+    from loopy import CACHING_ENABLED
+    from loopy.version import DATA_MODEL_VERSION
+    from functools import wraps
+    from pytools.persistent_dict import WriteOncePersistentDict
+
+    @wraps(transformation_func)
+    def wrapper(*args, **kwargs):
+        if (not CACHING_ENABLED
+                or kwargs.pop("_no_memoize_on_disk", False)):
+            return transformation_func(*args, **kwargs)
+
+        transform_cache = WriteOncePersistentDict(
+            (f"loopy-transform-cache-{key_builder_t.__qualname__}-v0-"
+             + DATA_MODEL_VERSION),
+            key_builder=key_builder_t())
+        cache_key = (args, kwargs)
+
+        try:
+            result = transform_cache[cache_key]
+            logger.debug(f"Transformation {transformation_func.__name__}"
+                         " returned from memoized result on disk.")
+            return result
+        except KeyError:
+            logger.debug(f"Transformation {transformation_func.__name__}"
+                         " not present on disk")
+
+            result = transformation_func(*args, **kwargs)
+            transform_cache.store_if_not_present((args, kwargs), result)
+            return result
+
+    return wrapper
 
 # vim: fdm=marker
