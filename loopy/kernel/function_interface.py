@@ -373,11 +373,12 @@ class InKernelCallable(ABC):
     # {{{ hackery to avoid breaking Firedrake
 
     def _all_attrs(self) -> Collection[str]:
+        # use a dict as an ordered set
         dc_attrs = {
-            fld.name for fld in fields(self)
+            fld.name: None for fld in fields(self)
         }
         legacy_fields: Collection[str] = getattr(self, "fields", [])
-        return dc_attrs | set(legacy_fields)
+        return tuple((dc_attrs | {f: None for f in legacy_fields}).keys())
 
     def copy(self, **kwargs: Any) -> Self:
         present_kwargs = {
